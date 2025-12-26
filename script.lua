@@ -13,7 +13,7 @@ if queue then
         TeleportQueued = true
 
         queue([[
-            loadstring(game:HttpGet("YOUR_RAW_SCRIPT_URL_HERE"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/limbsyy/Permafreshie/refs/heads/main/script.lua"))()
         ]])
     end)
 end

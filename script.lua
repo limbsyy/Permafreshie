@@ -1,4 +1,9 @@
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
+
 local TeleportQueued = false
 
 local queue =
@@ -55,13 +60,6 @@ local SettingsTab = Window:AddTab("Settings")
 
 local esp, esp_renderstep, framework = loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostDuckyy/ESP-Library/refs/heads/main/nomercy.rip/source.lua"))()
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local SoundService = game:GetService("SoundService")
-local RunService = game:GetService("RunService")
-
-
 local function notify(title, text)
     Library:Notify({
         Title = title,
@@ -104,8 +102,6 @@ local function clearHighlights(model)
     end
 end
 -------=====spectate=====--------
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -365,7 +361,72 @@ MiscFullbrightBox:AddToggle("Fullbright", {
         Lighting.Brightness = initialBrightness
     end
 end)
+-- =======================--
 
+
+--====Hp bars====--
+local LiveFolder = Workspace:WaitForChild("Live")
+local HumanoidDefaults = {}
+local HealthbarsEnabled = false
+
+local INVISIBLE_NAME = "\226\128\139"
+
+local function applyHumanoid(hum)
+    if not HumanoidDefaults[hum] then
+        HumanoidDefaults[hum] = {
+            HealthDisplayType = hum.HealthDisplayType,
+            DisplayDistanceType = hum.DisplayDistanceType,
+            DisplayName = hum.DisplayName
+        }
+    end
+
+    hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
+    hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Subject
+    hum.DisplayName = INVISIBLE_NAME
+end
+
+local function restoreHumanoid(hum)
+    local data = HumanoidDefaults[hum]
+    if data then
+        hum.HealthDisplayType = data.HealthDisplayType
+        hum.DisplayDistanceType = data.DisplayDistanceType
+        hum.DisplayName = data.DisplayName
+    end
+end
+
+local function processModel(model)
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if HealthbarsEnabled then
+            applyHumanoid(hum)
+        else
+            restoreHumanoid(hum)
+        end
+    end
+end
+
+for _, model in ipairs(LiveFolder:GetChildren()) do
+    processModel(model)
+end
+
+LiveFolder.ChildAdded:Connect(function(model)
+    local hum = model:WaitForChild("Humanoid", 5)
+    if hum then
+        processModel(model)
+    end
+end)
+
+MiscFullbrightBox:AddToggle("LiveHealthbars", {
+    Text = "Health Bars",
+	Tooltip = "Show HP bars in humanoids inside .Live",
+    Default = false,
+}):OnChanged(function(v)
+    HealthbarsEnabled = v
+    for _, model in ipairs(LiveFolder:GetChildren()) do
+        processModel(model)
+    end
+end)
+--=========----
 
 -- ===== THEME & SAVE MANAGER =====
 ThemeManager:SetLibrary(Library)

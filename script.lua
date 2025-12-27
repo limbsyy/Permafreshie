@@ -428,7 +428,7 @@ end)
 
 MiscFullbrightBox:AddToggle("LiveHealthbars", {
     Text = "Health Bars",
-	Tooltip = "Shows hp bars to humanoids inside .Live"
+	Tooltip = "Shows hp bars to humanoids inside .Live",
     Default = false,
 }):OnChanged(function(v)
     HealthbarsEnabled = v

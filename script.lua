@@ -111,62 +111,129 @@ local viewingPlayer, viewingRow
 local viewDiedConnection, viewChangedConnection, colorChangedConnection
 
 local function stopSpectating()
-	if viewDiedConnection then viewDiedConnection:Disconnect() viewDiedConnection=nil end
-	if viewChangedConnection then viewChangedConnection:Disconnect() viewChangedConnection=nil end
-	if colorChangedConnection then colorChangedConnection:Disconnect() colorChangedConnection=nil end
+	if viewDiedConnection then
+		viewDiedConnection:Disconnect()
+		viewDiedConnection = nil
+	end
+	if viewChangedConnection then
+		viewChangedConnection:Disconnect()
+		viewChangedConnection = nil
+	end
+	if colorChangedConnection then
+		colorChangedConnection:Disconnect()
+		colorChangedConnection = nil
+	end
+
 	if viewingRow then
 		local label = viewingRow:FindFirstChild("PlayerName")
-		if label then label.TextColor3 = Color3.fromRGB(255,255,255) end
+		if label then
+			label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		end
 	end
-	viewingPlayer, viewingRow = nil, nil
-	Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or Camera
+
+	viewingPlayer = nil
+	viewingRow = nil
+
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			Camera.CameraSubject = hum
+			return
+		end
+	end
+
+	Camera.CameraSubject = Camera
 end
 
 local function spectatePlayer(player, row)
+
 	if viewingRow then
 		local prevLabel = viewingRow:FindFirstChild("PlayerName")
-		if prevLabel then prevLabel.TextColor3 = Color3.fromRGB(255,255,255) end
-		if colorChangedConnection then colorChangedConnection:Disconnect() colorChangedConnection=nil end
+		if prevLabel then
+			prevLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		end
 	end
-	viewingPlayer, viewingRow = player, row
+	if colorChangedConnection then
+		colorChangedConnection:Disconnect()
+		colorChangedConnection = nil
+	end
+
+	viewingPlayer = player
+	viewingRow = row
+
 	local character = player.Character or player.CharacterAdded:Wait()
-	Camera.CameraSubject = character:WaitForChild("Humanoid")
-	viewDiedConnection = player.CharacterAdded:Connect(function(c) Camera.CameraSubject=c:WaitForChild("Humanoid") end)
-	viewChangedConnection = Camera:GetPropertyChangedSignal("CameraSubject"):Connect(function()
-		if viewingPlayer and viewingPlayer.Character then
-			local hum=viewingPlayer.Character:FindFirstChild("Humanoid")
-			if hum then Camera.CameraSubject=hum end
+	local hum = character:WaitForChild("Humanoid", 5)
+	if hum then
+		Camera.CameraSubject = hum
+	end
+
+
+	viewDiedConnection = player.CharacterAdded:Connect(function(c)
+		if viewingPlayer ~= player then return end
+		if not c then return end
+
+		local newHum = c:WaitForChild("Humanoid", 5)
+		if newHum then
+			Camera.CameraSubject = newHum
 		end
 	end)
-	local label=row:FindFirstChild("PlayerName")
+
+
+	viewChangedConnection = Camera:GetPropertyChangedSignal("CameraSubject"):Connect(function()
+		if viewingPlayer ~= player then return end
+		if player.Character then
+			local h = player.Character:FindFirstChildOfClass("Humanoid")
+			if h then
+				Camera.CameraSubject = h
+			end
+		end
+	end)
+
+
+	local label = row:FindFirstChild("PlayerName")
 	if label then
-		label.TextColor3=Color3.fromRGB(255,0,0)
-		if colorChangedConnection then colorChangedConnection:Disconnect() end
-		colorChangedConnection=label:GetPropertyChangedSignal("TextColor3"):Connect(function()
-			if viewingRow==row then label.TextColor3=Color3.fromRGB(255,0,0) end
+		label.TextColor3 = Color3.fromRGB(255, 0, 0)
+		colorChangedConnection = label:GetPropertyChangedSignal("TextColor3"):Connect(function()
+			if viewingRow == row then
+				label.TextColor3 = Color3.fromRGB(255, 0, 0)
+			end
 		end)
 	end
 end
 
 local function setupRow(row)
 	if not row:IsA("Frame") then return end
-	local playerValue=row:FindFirstChild("Player")
-	local clickButton=row:FindFirstChild("Click")
-	if not (playerValue and playerValue.Value and playerValue.Value:IsA("Player") and clickButton) then return end
+
+	local playerValue = row:FindFirstChild("Player")
+	local clickButton = row:FindFirstChild("Click")
+	if not (
+		playerValue
+		and playerValue.Value
+		and playerValue.Value:IsA("Player")
+		and clickButton
+	) then
+		return
+	end
+
 	if clickButton:GetAttribute("SpectateConnected") then return end
 	clickButton:SetAttribute("SpectateConnected", true)
+
 	clickButton.MouseButton1Click:Connect(function()
-		local target=playerValue.Value
-		if viewingPlayer==target then stopSpectating() else spectatePlayer(target,row) end
+		local target = playerValue.Value
+		if viewingPlayer == target then
+			stopSpectating()
+		else
+			spectatePlayer(target, row)
+		end
 	end)
 end
 
-for _,row in pairs(ScrollingFrame:GetChildren()) do setupRow(row) end
+for _, row in pairs(ScrollingFrame:GetChildren()) do
+	setupRow(row)
+end
 ScrollingFrame.ChildAdded:Connect(setupRow)
 --------=========------------
-
-
-
 
 
 local alerts = {

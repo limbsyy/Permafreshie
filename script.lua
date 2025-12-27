@@ -46,9 +46,9 @@ local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
     Title = "Permafreshie",
-    Footer = "version: 1.0",
+    Footer = "Click player list to observe",
     Icon = 12985862028,
-    NotifySide = "Right",
+    NotifySide = "Left",
     ShowCustomCursor = false,
 })
 
@@ -363,7 +363,6 @@ MiscFullbrightBox:AddToggle("Fullbright", {
 end)
 -- =======================--
 
-
 --====Hp bars====--
 local LiveFolder = Workspace:WaitForChild("Live")
 local HumanoidDefaults = {}
@@ -371,7 +370,11 @@ local HealthbarsEnabled = false
 
 local INVISIBLE_NAME = "\226\128\139"
 
-local function applyHumanoid(hum)
+local function isNPC(model)
+    return model:FindFirstChild("IsNPC") ~= nil
+end
+
+local function applyHumanoid(model, hum)
     if not HumanoidDefaults[hum] then
         HumanoidDefaults[hum] = {
             HealthDisplayType = hum.HealthDisplayType,
@@ -382,7 +385,11 @@ local function applyHumanoid(hum)
 
     hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
     hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Subject
-    hum.DisplayName = INVISIBLE_NAME
+
+
+    if not isNPC(model) then
+        hum.DisplayName = INVISIBLE_NAME
+    end
 end
 
 local function restoreHumanoid(hum)
@@ -396,18 +403,20 @@ end
 
 local function processModel(model)
     local hum = model:FindFirstChildOfClass("Humanoid")
-    if hum then
-        if HealthbarsEnabled then
-            applyHumanoid(hum)
-        else
-            restoreHumanoid(hum)
-        end
+    if not hum then return end
+
+    if HealthbarsEnabled then
+        applyHumanoid(model, hum)
+    else
+        restoreHumanoid(hum)
     end
 end
+
 
 for _, model in ipairs(LiveFolder:GetChildren()) do
     processModel(model)
 end
+
 
 LiveFolder.ChildAdded:Connect(function(model)
     local hum = model:WaitForChild("Humanoid", 5)
@@ -416,9 +425,10 @@ LiveFolder.ChildAdded:Connect(function(model)
     end
 end)
 
+
 MiscFullbrightBox:AddToggle("LiveHealthbars", {
     Text = "Health Bars",
-	Tooltip = "Show HP bars in humanoids inside .Live",
+	Tooltip = "Shows hp bars to humanoids inside .Live"
     Default = false,
 }):OnChanged(function(v)
     HealthbarsEnabled = v
@@ -427,6 +437,41 @@ MiscFullbrightBox:AddToggle("LiveHealthbars", {
     end
 end)
 --=========----
+
+
+--====Snow====--
+local SnowFolder = Workspace:WaitForChild("Thrown"):WaitForChild("Snow")
+local ParticleDefaults = {}
+local SnowParticlesEnabled = true
+
+local function setSnowParticles(state)
+    for _, obj in ipairs(SnowFolder:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") then
+            if not ParticleDefaults[obj] then
+                ParticleDefaults[obj] = obj.Enabled
+            end
+            obj.Enabled = state
+        end
+    end
+end
+
+MiscFullbrightBox:AddToggle("AmbientSnow", {
+    Text = "Snow Particles",
+	Tooltip = "Will take a bit for the particles to dissapear",
+    Default = true,
+}):OnChanged(function(v)
+    SnowParticlesEnabled = v
+    if v then
+        for emitter, original in pairs(ParticleDefaults) do
+            if emitter.Parent then
+                emitter.Enabled = original
+            end
+        end
+    else
+        setSnowParticles(false)
+    end
+end)
+--========--
 
 -- ===== THEME & SAVE MANAGER =====
 ThemeManager:SetLibrary(Library)

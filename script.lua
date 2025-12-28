@@ -26,7 +26,7 @@ end
 
 
 
-if game.PlaceId == 126222071643660 then
+if game.PlaceId == 126222071643660 or game.PlaceId == 117483355680951 then
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Permafreshie",
         Text = "Cannot run in lobby.",

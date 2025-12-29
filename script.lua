@@ -552,7 +552,7 @@ MiscFullbrightBox:AddSlider("LiveHealthbarInterval", {
 	Default = 1,
 	Min = 0.2,
 	Max = 5,
-	Rounding = 0,
+	Rounding = 1,
 	Suffix = "s",
 }):OnChanged(function(v)
 	PollInterval = v

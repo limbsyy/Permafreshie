@@ -4,6 +4,10 @@ local Workspace = game:GetService("Workspace")
 local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
 
+
+local PollInterval = 1.0
+local PollConnection
+
 local TeleportQueued = false
 
 local queue =
@@ -236,6 +240,7 @@ ScrollingFrame.ChildAdded:Connect(setupRow)
 --------=========------------
 
 
+
 local alerts = {
     ["???"] = {Folder=Workspace:WaitForChild("Live"), ModelName="???", AlertEnabled=false, HighlightEnabled=false, SoundId="rbxassetid://5621616510"},
     Divinos = {Folder=Workspace:WaitForChild("NPCs"), ModelName="Divinos", AlertEnabled=false, HighlightEnabled=false, SoundId="rbxassetid://87681552750899"},
@@ -430,16 +435,24 @@ MiscFullbrightBox:AddToggle("Fullbright", {
 end)
 -- =======================--
 
---====Hp bars====--
+--==== HP Bars ====--
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
 local LiveFolder = Workspace:WaitForChild("Live")
 local HumanoidDefaults = {}
 local HealthbarsEnabled = false
 
-local INVISIBLE_NAME = "\226\128\139"
+local PollInterval = 1.0
+local PollConnection
+
+local INVISIBLE_NAME = "\226\128\139" -- zero-width space
+
 
 local function isNPC(model)
 	return model:FindFirstChild("IsNPC") ~= nil
 end
+
 
 local function applyHumanoid(model, hum)
 	if not HumanoidDefaults[hum] then
@@ -463,6 +476,7 @@ local function applyHumanoid(model, hum)
 	end
 end
 
+
 local function restoreHumanoid(hum)
 	local data = HumanoidDefaults[hum]
 	if data then
@@ -473,7 +487,9 @@ local function restoreHumanoid(hum)
 	end
 end
 
+
 local function processModel(model)
+	if not model:IsA("Model") then return end
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
 
@@ -484,28 +500,66 @@ local function processModel(model)
 	end
 end
 
+
+local function startPolling()
+	if PollConnection then return end
+
+	local elapsed = 0
+	PollConnection = RunService.Heartbeat:Connect(function(dt)
+		elapsed += dt
+		if elapsed < PollInterval then return end
+		elapsed = 0
+
+		for _, model in ipairs(LiveFolder:GetChildren()) do
+			processModel(model)
+		end
+	end)
+end
+
+local function stopPolling()
+	if PollConnection then
+		PollConnection:Disconnect()
+		PollConnection = nil
+	end
+end
+
+
 for _, model in ipairs(LiveFolder:GetChildren()) do
 	processModel(model)
 end
 
-LiveFolder.ChildAdded:Connect(function(model)
-	local hum = model:WaitForChild("Humanoid", 5)
-	if hum then
-		processModel(model)
-	end
-end)
-
 MiscFullbrightBox:AddToggle("LiveHealthbars", {
 	Text = "Health Bars",
-	Tooltip = "Shows hp bars to humanoids inside .Live",
+	Tooltip = "Shows HP bars for humanoids inside Workspace.Live",
 	Default = false,
 }):OnChanged(function(v)
 	HealthbarsEnabled = v
+
+	if v then
+		startPolling()
+	else
+		stopPolling()
+	end
+
 	for _, model in ipairs(LiveFolder:GetChildren()) do
 		processModel(model)
 	end
 end)
---=========----
+
+MiscFullbrightBox:AddSlider("LiveHealthbarInterval", {
+	Text = "Healthbar Update Interval",
+	Tooltip = "How often .Live is scanned (seconds), dont set too low",
+	Default = 1,
+	Min = 0.2,
+	Max = 5,
+	Rounding = 0,
+	Suffix = "s",
+}):OnChanged(function(v)
+	PollInterval = v
+end)
+
+--==================--
+
 
 
 

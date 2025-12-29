@@ -438,72 +438,75 @@ local HealthbarsEnabled = false
 local INVISIBLE_NAME = "\226\128\139"
 
 local function isNPC(model)
-    return model:FindFirstChild("IsNPC") ~= nil
+	return model:FindFirstChild("IsNPC") ~= nil
 end
 
 local function applyHumanoid(model, hum)
-    if not HumanoidDefaults[hum] then
-        HumanoidDefaults[hum] = {
-            HealthDisplayType = hum.HealthDisplayType,
-            DisplayDistanceType = hum.DisplayDistanceType,
-            DisplayName = hum.DisplayName
-        }
-    end
+	if not HumanoidDefaults[hum] then
+		HumanoidDefaults[hum] = {
+			HealthDisplayType = hum.HealthDisplayType,
+			DisplayDistanceType = hum.DisplayDistanceType,
+			HealthDisplayDistance = hum.HealthDisplayDistance,
+			DisplayName = hum.DisplayName
+		}
+	end
 
-    hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
-    hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Subject
+	hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Subject
 
-
-    if not isNPC(model) then
-        hum.DisplayName = INVISIBLE_NAME
-    end
+	if isNPC(model) then
+		if hum.HealthDisplayDistance < 100 then
+			hum.HealthDisplayDistance = 100
+		end
+	else
+		hum.DisplayName = INVISIBLE_NAME
+	end
 end
 
 local function restoreHumanoid(hum)
-    local data = HumanoidDefaults[hum]
-    if data then
-        hum.HealthDisplayType = data.HealthDisplayType
-        hum.DisplayDistanceType = data.DisplayDistanceType
-        hum.DisplayName = data.DisplayName
-    end
+	local data = HumanoidDefaults[hum]
+	if data then
+		hum.HealthDisplayType = data.HealthDisplayType
+		hum.DisplayDistanceType = data.DisplayDistanceType
+		hum.HealthDisplayDistance = data.HealthDisplayDistance
+		hum.DisplayName = data.DisplayName
+	end
 end
 
 local function processModel(model)
-    local hum = model:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
 
-    if HealthbarsEnabled then
-        applyHumanoid(model, hum)
-    else
-        restoreHumanoid(hum)
-    end
+	if HealthbarsEnabled then
+		applyHumanoid(model, hum)
+	else
+		restoreHumanoid(hum)
+	end
 end
-
 
 for _, model in ipairs(LiveFolder:GetChildren()) do
-    processModel(model)
+	processModel(model)
 end
 
-
 LiveFolder.ChildAdded:Connect(function(model)
-    local hum = model:WaitForChild("Humanoid", 5)
-    if hum then
-        processModel(model)
-    end
+	local hum = model:WaitForChild("Humanoid", 5)
+	if hum then
+		processModel(model)
+	end
 end)
-
 
 MiscFullbrightBox:AddToggle("LiveHealthbars", {
-    Text = "Health Bars",
+	Text = "Health Bars",
 	Tooltip = "Shows hp bars to humanoids inside .Live",
-    Default = false,
+	Default = false,
 }):OnChanged(function(v)
-    HealthbarsEnabled = v
-    for _, model in ipairs(LiveFolder:GetChildren()) do
-        processModel(model)
-    end
+	HealthbarsEnabled = v
+	for _, model in ipairs(LiveFolder:GetChildren()) do
+		processModel(model)
+	end
 end)
 --=========----
+
 
 
 --====Snow====--

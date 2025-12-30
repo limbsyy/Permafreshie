@@ -240,6 +240,7 @@ ScrollingFrame.ChildAdded:Connect(setupRow)
 --------=========------------
 
 
+
 local alerts = {
     ["???"] = {Folder=Workspace:WaitForChild("Live"), ModelName="???", AlertEnabled=false, HighlightEnabled=false, SoundId="rbxassetid://5621616510"},
     Divinos = {Folder=Workspace:WaitForChild("NPCs"), ModelName="Divinos", AlertEnabled=false, HighlightEnabled=false, SoundId="rbxassetid://87681552750899"},
@@ -413,76 +414,26 @@ task.spawn(function()
     end
 end)
 
---==== WEATHER DISABLE ====--
-local SnowFolder = Workspace:WaitForChild("Thrown"):WaitForChild("Snow")
-local Grass = Workspace:WaitForChild("Map"):WaitForChild("Grass")
+-- ===== FULLBRIGHT =====
+local Lighting = game:GetService("Lighting")
+local initialAmbient = Lighting.Ambient
+local initialBrightness = Lighting.Brightness
 
--- Sounds (lowercase, as you said)
-local RainSound = Workspace:FindFirstChild("rain")
-local WindSound = Workspace:FindFirstChild("wind")
+local MiscFullbrightBox = MiscTab:AddRightGroupbox("Visuals")
 
-local ParticleDefaults = {}
-local WeatherEnabled = true
-
--- Disable / enable snow particles
-local function setSnowParticles(state)
-	for _, obj in ipairs(SnowFolder:GetDescendants()) do
-		if obj:IsA("ParticleEmitter") then
-			if ParticleDefaults[obj] == nil then
-				ParticleDefaults[obj] = obj.Enabled
-			end
-			obj.Enabled = state
-		end
-	end
-end
-
--- Polling loop (only runs when weather is disabled)
-task.spawn(function()
-	while true do
-		task.wait(3)
-
-		if WeatherEnabled then
-			continue
-		end
-
-		-- ❄ Snow detection (grass turns snow material)
-		if Grass.Material == Enum.Material.Snow then
-			setSnowParticles(false)
-		end
-
-		-- 🌧 Rain detection
-		if RainSound and RainSound:IsA("Sound") and RainSound.Playing then
-			RainSound:Stop()
-		end
-
-		-- 🌬 Wind detection
-		if WindSound and WindSound:IsA("Sound") and WindSound.Playing then
-			WindSound:Stop()
-		end
-	end
-end)
-
--- UI Toggle
-MiscFullbrightBox:AddToggle("AmbientWeather", {
-	Text = "Show Weather",
-	Tooltip = "Disables snow, rain, and wind effects",
-	Default = true,
+MiscFullbrightBox:AddToggle("Fullbright", {
+    Text = "Fullbright",
+    Default = false,
 }):OnChanged(function(v)
-	WeatherEnabled = v
-
-	if v then
-		-- Restore snow particles
-		for emitter, original in pairs(ParticleDefaults) do
-			if emitter.Parent then
-				emitter.Enabled = original
-			end
-		end
-	end
+    if v then
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 1
+    else
+        Lighting.Ambient = initialAmbient
+        Lighting.Brightness = initialBrightness
+    end
 end)
---=========================--
-
-
-
+-- =======================--
 
 --==== HP Bars ====--
 local Workspace = game:GetService("Workspace")
@@ -612,48 +563,39 @@ end)
 
 
 
---==== WEATHER (SNOW + RAIN) ====--
-local ThrownFolder = Workspace:WaitForChild("Thrown")
-local WeatherFolders = {
-	ThrownFolder:WaitForChild("Snow"),
-	ThrownFolder:WaitForChild("Rain"),
-}
-
+--====Snow====--
+local SnowFolder = Workspace:WaitForChild("Thrown"):WaitForChild("Snow")
 local ParticleDefaults = {}
-local WeatherEnabled = true
+local SnowParticlesEnabled = true
 
-local function setWeatherParticles(state)
-	for _, folder in ipairs(WeatherFolders) do
-		for _, obj in ipairs(folder:GetDescendants()) do
-			if obj:IsA("ParticleEmitter") then
-				if ParticleDefaults[obj] == nil then
-					ParticleDefaults[obj] = obj.Enabled
-				end
-				obj.Enabled = state
-			end
-		end
-	end
+local function setSnowParticles(state)
+    for _, obj in ipairs(SnowFolder:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") then
+            if not ParticleDefaults[obj] then
+                ParticleDefaults[obj] = obj.Enabled
+            end
+            obj.Enabled = state
+        end
+    end
 end
 
-MiscFullbrightBox:AddToggle("AmbientWeather", {
-	Text = "Show Weather",
-	Tooltip = "Will take a bit for the particles to disappear",
-	Default = true,
+MiscFullbrightBox:AddToggle("AmbientSnow", {
+    Text = "Snow Particles",
+	Tooltip = "Will take a bit for the particles to dissapear",
+    Default = true,
 }):OnChanged(function(v)
-	WeatherEnabled = v
-
-	if v then
-		for emitter, original in pairs(ParticleDefaults) do
-			if emitter and emitter.Parent then
-				emitter.Enabled = original
-			end
-		end
-	else
-		setWeatherParticles(false)
-	end
+    SnowParticlesEnabled = v
+    if v then
+        for emitter, original in pairs(ParticleDefaults) do
+            if emitter.Parent then
+                emitter.Enabled = original
+            end
+        end
+    else
+        setSnowParticles(false)
+    end
 end)
---===============================--
-
+--========--
 
 -- ===== THEME & SAVE MANAGER =====
 ThemeManager:SetLibrary(Library)

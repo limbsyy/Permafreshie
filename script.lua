@@ -413,53 +413,75 @@ task.spawn(function()
     end
 end)
 
--- ===== FULLBRIGHT =====
-local Lighting = game:GetService("Lighting")
-local initialAmbient = Lighting.Ambient
-local initialBrightness = Lighting.Brightness
-local initialOutdoor = Lighting.OutdoorAmbient
+--==== WEATHER DISABLE ====--
+local SnowFolder = Workspace:WaitForChild("Thrown"):WaitForChild("Snow")
+local Grass = Workspace:WaitForChild("Map"):WaitForChild("Grass")
 
-local FullbrightEnabled = false
-local PollInterval = 1
+-- Sounds (lowercase, as you said)
+local RainSound = Workspace:FindFirstChild("rain")
+local WindSound = Workspace:FindFirstChild("wind")
 
-local MiscFullbrightBox = MiscTab:AddRightGroupbox("Visuals")
+local ParticleDefaults = {}
+local WeatherEnabled = true
 
+-- Disable / enable snow particles
+local function setSnowParticles(state)
+	for _, obj in ipairs(SnowFolder:GetDescendants()) do
+		if obj:IsA("ParticleEmitter") then
+			if ParticleDefaults[obj] == nil then
+				ParticleDefaults[obj] = obj.Enabled
+			end
+			obj.Enabled = state
+		end
+	end
+end
 
-MiscFullbrightBox:AddToggle("Fullbright", {
-    Text = "Fullbright",
-    Default = false,
-}):OnChanged(function(v)
-    FullbrightEnabled = v
-    if not v then
-        Lighting.Ambient = initialAmbient
-        Lighting.Brightness = initialBrightness
-        Lighting.OutdoorAmbient = initialOutdoor
-    end
-end)
-
-
-MiscFullbrightBox:AddSlider("FullbrightInterval", {
-    Text = "Poll Interval (sec)",
-    Default = 1,
-    Min = 0.1,
-    Max = 5,
-    Rounding = 1,
-}):OnChanged(function(v)
-    PollInterval = v
-end)
-
-
+-- Polling loop (only runs when weather is disabled)
 task.spawn(function()
-    while true do
-        task.wait(PollInterval)
-        if FullbrightEnabled then
-            Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-            Lighting.Brightness = 1
-            Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-        end
-    end
+	while true do
+		task.wait(3)
+
+		if WeatherEnabled then
+			continue
+		end
+
+		-- ❄ Snow detection (grass turns snow material)
+		if Grass.Material == Enum.Material.Snow then
+			setSnowParticles(false)
+		end
+
+		-- 🌧 Rain detection
+		if RainSound and RainSound:IsA("Sound") and RainSound.Playing then
+			RainSound:Stop()
+		end
+
+		-- 🌬 Wind detection
+		if WindSound and WindSound:IsA("Sound") and WindSound.Playing then
+			WindSound:Stop()
+		end
+	end
 end)
--- =======================--
+
+-- UI Toggle
+MiscFullbrightBox:AddToggle("AmbientWeather", {
+	Text = "Show Weather",
+	Tooltip = "Disables snow, rain, and wind effects",
+	Default = true,
+}):OnChanged(function(v)
+	WeatherEnabled = v
+
+	if v then
+		-- Restore snow particles
+		for emitter, original in pairs(ParticleDefaults) do
+			if emitter.Parent then
+				emitter.Enabled = original
+			end
+		end
+	end
+end)
+--=========================--
+
+
 
 
 --==== HP Bars ====--

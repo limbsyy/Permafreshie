@@ -597,6 +597,28 @@ MiscFullbrightBox:AddToggle("AmbientSnow", {
 end)
 --========--
 
+--==== LOADER ====--
+local LoaderBox = MiscTab:AddRightGroupbox("Loader")
+
+LoaderBox:AddButton({
+	Text = "Infinite Yield",
+	Tooltip = "Loads latest version of Infinite Yield",
+	Func = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+	end,
+})
+
+LoaderBox:AddButton({
+	Text = "Dex Explorer",
+	Tooltip = "Loads Dex Explorer",
+	Func = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
+	end,
+})
+--================--
+
+
+
 -- ===== THEME & SAVE MANAGER =====
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)

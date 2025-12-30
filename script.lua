@@ -240,7 +240,6 @@ ScrollingFrame.ChildAdded:Connect(setupRow)
 --------=========------------
 
 
-
 local alerts = {
     ["???"] = {Folder=Workspace:WaitForChild("Live"), ModelName="???", AlertEnabled=false, HighlightEnabled=false, SoundId="rbxassetid://5621616510"},
     Divinos = {Folder=Workspace:WaitForChild("NPCs"), ModelName="Divinos", AlertEnabled=false, HighlightEnabled=false, SoundId="rbxassetid://87681552750899"},
@@ -418,22 +417,50 @@ end)
 local Lighting = game:GetService("Lighting")
 local initialAmbient = Lighting.Ambient
 local initialBrightness = Lighting.Brightness
+local initialOutdoor = Lighting.OutdoorAmbient
+
+local FullbrightEnabled = false
+local PollInterval = 1
 
 local MiscFullbrightBox = MiscTab:AddRightGroupbox("Visuals")
+
 
 MiscFullbrightBox:AddToggle("Fullbright", {
     Text = "Fullbright",
     Default = false,
 }):OnChanged(function(v)
-    if v then
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        Lighting.Brightness = 1
-    else
+    FullbrightEnabled = v
+    if not v then
         Lighting.Ambient = initialAmbient
         Lighting.Brightness = initialBrightness
+        Lighting.OutdoorAmbient = initialOutdoor
+    end
+end)
+
+
+MiscFullbrightBox:AddSlider("FullbrightInterval", {
+    Text = "Poll Interval (sec)",
+    Default = 1,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 1,
+}):OnChanged(function(v)
+    PollInterval = v
+end)
+
+
+task.spawn(function()
+    while true do
+        task.wait(PollInterval)
+        if FullbrightEnabled then
+            Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+            Lighting.Brightness = 1
+            Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        end
     end
 end)
 -- =======================--
+
 
 --==== HP Bars ====--
 local Workspace = game:GetService("Workspace")
@@ -563,39 +590,48 @@ end)
 
 
 
---====Snow====--
-local SnowFolder = Workspace:WaitForChild("Thrown"):WaitForChild("Snow")
-local ParticleDefaults = {}
-local SnowParticlesEnabled = true
+--==== WEATHER (SNOW + RAIN) ====--
+local ThrownFolder = Workspace:WaitForChild("Thrown")
+local WeatherFolders = {
+	ThrownFolder:WaitForChild("Snow"),
+	ThrownFolder:WaitForChild("Rain"),
+}
 
-local function setSnowParticles(state)
-    for _, obj in ipairs(SnowFolder:GetDescendants()) do
-        if obj:IsA("ParticleEmitter") then
-            if not ParticleDefaults[obj] then
-                ParticleDefaults[obj] = obj.Enabled
-            end
-            obj.Enabled = state
-        end
-    end
+local ParticleDefaults = {}
+local WeatherEnabled = true
+
+local function setWeatherParticles(state)
+	for _, folder in ipairs(WeatherFolders) do
+		for _, obj in ipairs(folder:GetDescendants()) do
+			if obj:IsA("ParticleEmitter") then
+				if ParticleDefaults[obj] == nil then
+					ParticleDefaults[obj] = obj.Enabled
+				end
+				obj.Enabled = state
+			end
+		end
+	end
 end
 
-MiscFullbrightBox:AddToggle("AmbientSnow", {
-    Text = "Snow Particles",
-	Tooltip = "Will take a bit for the particles to dissapear",
-    Default = true,
+MiscFullbrightBox:AddToggle("AmbientWeather", {
+	Text = "Show Weather",
+	Tooltip = "Will take a bit for the particles to disappear",
+	Default = true,
 }):OnChanged(function(v)
-    SnowParticlesEnabled = v
-    if v then
-        for emitter, original in pairs(ParticleDefaults) do
-            if emitter.Parent then
-                emitter.Enabled = original
-            end
-        end
-    else
-        setSnowParticles(false)
-    end
+	WeatherEnabled = v
+
+	if v then
+		for emitter, original in pairs(ParticleDefaults) do
+			if emitter and emitter.Parent then
+				emitter.Enabled = original
+			end
+		end
+	else
+		setWeatherParticles(false)
+	end
 end)
---========--
+--===============================--
+
 
 -- ===== THEME & SAVE MANAGER =====
 ThemeManager:SetLibrary(Library)

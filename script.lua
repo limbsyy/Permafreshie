@@ -597,10 +597,10 @@ MiscFullbrightBox:AddToggle("AmbientSnow", {
 end)
 --========--
 
---==== THROWN TOP-LEVEL DUMP ====--
+--==== THROWN DUMP ====--
 MiscFullbrightBox:AddButton({
 	Text = "Print Thrown Contents",
-	Tooltip = "Prints top-level objects inside Workspace.Thrown with counts",
+	Tooltip = "Prints bjects inside Workspace.Thrown with Chest priority",
 	Func = function()
 		local Thrown = Workspace:FindFirstChild("Thrown")
 		if not Thrown then
@@ -614,18 +614,36 @@ MiscFullbrightBox:AddButton({
 			counts[obj.Name] = (counts[obj.Name] or 0) + 1
 		end
 
-		print("=== Workspace.Thrown (Top-Level) ===")
+		local chestList = {}
+		local otherList = {}
+
 		for name, count in pairs(counts) do
-			if count > 1 then
-				print(name .. " x" .. count)
+			local entry = (count > 1) and (name .. " x" .. count) or name
+			if string.sub(name, 1, 5) == "Chest" then
+				table.insert(chestList, entry)
 			else
-				print(name)
+				table.insert(otherList, entry)
 			end
 		end
+
+		table.sort(chestList)
+		table.sort(otherList)
+
+		print("=== Workspace.Thrown (Top-Level) ===")
+
+		for _, line in ipairs(chestList) do
+			print(line)
+		end
+
+		for _, line in ipairs(otherList) do
+			print(line)
+		end
+
 		print("===================================")
 	end
 })
---===============================--
+--===============================================--
+
 
 
 

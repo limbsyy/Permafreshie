@@ -597,10 +597,10 @@ MiscFullbrightBox:AddToggle("AmbientSnow", {
 end)
 --========--
 
---==== THROWN CONTENTS DUMP ====--
+--==== THROWN TOP-LEVEL DUMP ====--
 MiscFullbrightBox:AddButton({
 	Text = "Print Thrown Contents",
-	Tooltip = "Prints all instances inside Workspace.Thrown with counts",
+	Tooltip = "Prints top-level objects inside Workspace.Thrown with counts",
 	Func = function()
 		local Thrown = Workspace:FindFirstChild("Thrown")
 		if not Thrown then
@@ -610,12 +610,11 @@ MiscFullbrightBox:AddButton({
 
 		local counts = {}
 
-		for _, obj in ipairs(Thrown:GetDescendants()) do
-			local name = obj.Name
-			counts[name] = (counts[name] or 0) + 1
+		for _, obj in ipairs(Thrown:GetChildren()) do
+			counts[obj.Name] = (counts[obj.Name] or 0) + 1
 		end
 
-		print("=== Workspace.Thrown Contents ===")
+		print("=== Workspace.Thrown (Top-Level) ===")
 		for name, count in pairs(counts) do
 			if count > 1 then
 				print(name .. " x" .. count)
@@ -623,10 +622,11 @@ MiscFullbrightBox:AddButton({
 				print(name)
 			end
 		end
-		print("================================")
+		print("===================================")
 	end
 })
---==============================--
+--===============================--
+
 
 
 --==== LOADER ====--

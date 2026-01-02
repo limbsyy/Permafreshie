@@ -597,6 +597,38 @@ MiscFullbrightBox:AddToggle("AmbientSnow", {
 end)
 --========--
 
+--==== THROWN CONTENTS DUMP ====--
+MiscFullbrightBox:AddButton({
+	Text = "Print Thrown Contents",
+	Tooltip = "Prints all instances inside Workspace.Thrown with counts",
+	Func = function()
+		local Thrown = Workspace:FindFirstChild("Thrown")
+		if not Thrown then
+			warn("Workspace.Thrown not found")
+			return
+		end
+
+		local counts = {}
+
+		for _, obj in ipairs(Thrown:GetDescendants()) do
+			local name = obj.Name
+			counts[name] = (counts[name] or 0) + 1
+		end
+
+		print("=== Workspace.Thrown Contents ===")
+		for name, count in pairs(counts) do
+			if count > 1 then
+				print(name .. " x" .. count)
+			else
+				print(name)
+			end
+		end
+		print("================================")
+	end
+})
+--==============================--
+
+
 --==== LOADER ====--
 local LoaderBox = MiscTab:AddRightGroupbox("Loader")
 
